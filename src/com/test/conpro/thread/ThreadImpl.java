@@ -1,7 +1,6 @@
-package com.test.conpro;
+package com.test.conpro.thread;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedList;
 import java.util.Random;
 
 /**
@@ -9,9 +8,7 @@ import java.util.Random;
  */
 public class ThreadImpl {
     public static void main(String[] args) {
-        ResourcePool resourcePool = new ResourcePool();
-        resourcePool.setList(new ArrayList<>());
-        resourcePool.setCapacity(10);
+        ResourcePool resourcePool = new ResourcePool(7);
         Thread p1 = new Thread(new Producer(resourcePool));
         Thread p2 = new Thread(new Producer(resourcePool));
         Thread p3 = new Thread(new Producer(resourcePool));
@@ -35,9 +32,13 @@ public class ThreadImpl {
  * 资源池
  */
 class ResourcePool {
-    private List<Object> list;
+    private final LinkedList<Object> list = new LinkedList<>();
     private int size;
-    private int capacity;
+    private final int capacity;
+
+    public ResourcePool(int capacity) {
+        this.capacity = capacity;
+    }
 
     /**
      * 当池子没到最大容量时，将资源放入池中
@@ -46,7 +47,7 @@ class ResourcePool {
      */
     public synchronized void add(Object resource) throws InterruptedException {
         if (capacity >= size + 1) {
-            list.add(0, resource);
+            list.add(resource);
             System.out.println(Thread.currentThread().getName() + " produce a resource: " + resource);
             System.out.println(list);
             size++;
@@ -63,7 +64,7 @@ class ResourcePool {
      */
     public synchronized void remove() throws InterruptedException {
         if (size > 0) {
-            System.out.println(Thread.currentThread().getName() + " consume a resource: " + list.remove(list.size() - 1));
+            System.out.println(Thread.currentThread().getName() + " consume a resource: " + list.poll());
             System.out.println(list);
             size--;
             notifyAll();
@@ -71,14 +72,6 @@ class ResourcePool {
             System.out.println(Thread.currentThread().getName() + " consumer begin waiting");
             wait();
         }
-    }
-
-    public void setList(List<Object> list) {
-        this.list = list;
-    }
-
-    public void setCapacity(int capacity) {
-        this.capacity = capacity;
     }
 }
 
@@ -97,7 +90,7 @@ class Producer implements Runnable {
     public void run() {
         while (true) {
             try {
-                Thread.sleep(RANDOM.nextInt(1000));
+                Thread.sleep(RANDOM.nextInt(1500));
                 // 随机产生100以内的数字作为资源
                 resourcePool.add(RANDOM.nextInt(100));
             } catch (InterruptedException e) {
