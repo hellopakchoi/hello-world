@@ -1,21 +1,25 @@
 package com.test.conpro;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
+/**
+ * 生产者消费者模型，使用线程的wait()/notifyAll()实现
+ */
 public class ThreadImpl {
     public static void main(String[] args) {
-        Resource resource = new Resource();
-        resource.setList(new LinkedList<>());
-        resource.setCapacity(10);
-        Thread p1 = new Thread(new Producer(resource));
-        Thread p2 = new Thread(new Producer(resource));
-        Thread p3 = new Thread(new Producer(resource));
-        Thread c1 = new Thread(new Consumer(resource));
-        Thread c2 = new Thread(new Consumer(resource));
-        Thread c3 = new Thread(new Consumer(resource));
-        Thread c4 = new Thread(new Consumer(resource));
-        Thread c5 = new Thread(new Consumer(resource));
+        ResourcePool resourcePool = new ResourcePool();
+        resourcePool.setList(new ArrayList<>());
+        resourcePool.setCapacity(10);
+        Thread p1 = new Thread(new Producer(resourcePool));
+        Thread p2 = new Thread(new Producer(resourcePool));
+        Thread p3 = new Thread(new Producer(resourcePool));
+        Thread c1 = new Thread(new Consumer(resourcePool));
+        Thread c2 = new Thread(new Consumer(resourcePool));
+        Thread c3 = new Thread(new Consumer(resourcePool));
+        Thread c4 = new Thread(new Consumer(resourcePool));
+        Thread c5 = new Thread(new Consumer(resourcePool));
         p1.start();
         p2.start();
         p3.start();
@@ -27,17 +31,25 @@ public class ThreadImpl {
     }
 }
 
-class Resource {
-    private LinkedList<Object> list;
+/**
+ * 资源池
+ */
+class ResourcePool {
+    private List<Object> list;
     private int size;
     private int capacity;
 
+    /**
+     * 当池子没到最大容量时，将资源放入池中
+     * 当池子满了时，阻塞生产者，直到有消费者消费了资源
+     * @param resource 资源
+     */
     public synchronized void add(Object resource) throws InterruptedException {
         if (capacity >= size + 1) {
-            list.push(resource);
-            size++;
-            System.out.println(Thread.currentThread().getName() + " produce a resource");
+            list.add(0, resource);
+            System.out.println(Thread.currentThread().getName() + " produce a resource: " + resource);
             System.out.println(list);
+            size++;
             notifyAll();
         } else {
             System.out.println(Thread.currentThread().getName() + " producer begin waiting");
@@ -45,12 +57,15 @@ class Resource {
         }
     }
 
+    /**
+     * 当池子有资源时，从池中消费(移除)一个资源
+     * 当池子为空时，阻塞消费者，直到生产者生产了资源
+     */
     public synchronized void remove() throws InterruptedException {
         if (size > 0) {
-            list.removeLast();
-            size--;
-            System.out.println(Thread.currentThread().getName() + " consume a resource");
+            System.out.println(Thread.currentThread().getName() + " consume a resource: " + list.remove(list.size() - 1));
             System.out.println(list);
+            size--;
             notifyAll();
         } else {
             System.out.println(Thread.currentThread().getName() + " consumer begin waiting");
@@ -58,7 +73,7 @@ class Resource {
         }
     }
 
-    public void setList(LinkedList<Object> list) {
+    public void setList(List<Object> list) {
         this.list = list;
     }
 
@@ -67,19 +82,24 @@ class Resource {
     }
 }
 
+/**
+ * 生产者
+ */
 class Producer implements Runnable {
-    private final Resource resource;
+    private final ResourcePool resourcePool;
+    private static final Random RANDOM = new Random();
 
-    public Producer(Resource resource) {
-        this.resource = resource;
+    public Producer(ResourcePool resourcePool) {
+        this.resourcePool = resourcePool;
     }
 
     @Override
     public void run() {
         while (true) {
             try {
-                Thread.sleep(2000);
-                resource.add(new Random().nextInt(100));
+                Thread.sleep(RANDOM.nextInt(1000));
+                // 随机产生100以内的数字作为资源
+                resourcePool.add(RANDOM.nextInt(100));
             } catch (InterruptedException e) {
                 e.printStackTrace();
                 break;
@@ -88,19 +108,23 @@ class Producer implements Runnable {
     }
 }
 
+/**
+ * 消费者
+ */
 class Consumer implements Runnable {
-    private final Resource resource;
+    private final ResourcePool resourcePool;
+    private static final Random RANDOM = new Random();
 
-    public Consumer(Resource resource) {
-        this.resource = resource;
+    public Consumer(ResourcePool resourcePool) {
+        this.resourcePool = resourcePool;
     }
 
     @Override
     public void run() {
         while (true) {
             try {
-                Thread.sleep(2000);
-                resource.remove();
+                Thread.sleep(RANDOM.nextInt(2000));
+                resourcePool.remove();
             } catch (InterruptedException e) {
                 e.printStackTrace();
                 break;
