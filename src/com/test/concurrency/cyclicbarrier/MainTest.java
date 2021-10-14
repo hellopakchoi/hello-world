@@ -1,4 +1,4 @@
-package com.test.thread.cyclicbarrier;
+package com.test.concurrency.cyclicbarrier;
 
 import java.util.concurrent.*;
 

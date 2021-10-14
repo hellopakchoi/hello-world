@@ -1,4 +1,4 @@
-package com.test.thread.interrupt;
+package com.test.concurrency.interrupt;
 
 public class TestThread implements Runnable {
     private String mark;

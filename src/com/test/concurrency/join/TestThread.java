@@ -1,4 +1,4 @@
-package com.test.thread.join;
+package com.test.concurrency.join;
 
 public class TestThread implements Runnable {
     private String mark;

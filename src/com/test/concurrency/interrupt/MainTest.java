@@ -1,4 +1,4 @@
-package com.test.thread.interrupt;
+package com.test.concurrency.interrupt;
 
 public class MainTest {
     public static void main(String[] args) {
