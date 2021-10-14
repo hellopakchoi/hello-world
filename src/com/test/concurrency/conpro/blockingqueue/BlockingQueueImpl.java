@@ -1,16 +1,14 @@
-package com.test.conpro.reentrantlock;
+package com.test.concurrency.conpro.blockingqueue;
 
-import java.util.LinkedList;
 import java.util.Random;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
- * 生产者消费者模型的可重入锁实现
+ * 生产者消费者阻塞队列的实现
  */
-public class ReentrantLockImpl {
-    private static final ReentrantLock LOCK = new ReentrantLock();
-    private static final ResourcePool RESOURCE_POOL = new ResourcePool(7, LOCK);
+public class BlockingQueueImpl {
+    private static final ResourcePool RESOURCE_POOL = new ResourcePool();
 
     public static void main(String[] args) {
         Thread p1 = new Thread(new Producer(RESOURCE_POOL));
@@ -36,19 +34,7 @@ public class ReentrantLockImpl {
  * 资源池
  */
 class ResourcePool {
-    private final LinkedList<Object> list = new LinkedList<>();
-    private int size;
-    private final int capacity;
-    private final ReentrantLock lock;
-    private final Condition proCondition;
-    private final Condition conCondition;
-
-    public ResourcePool(int capacity, ReentrantLock lock) {
-        this.capacity = capacity;
-        this.lock = lock;
-        this.proCondition = lock.newCondition();
-        this.conCondition = lock.newCondition();
-    }
+    private final BlockingQueue<Object> blockingQueue = new LinkedBlockingQueue<>(7);
 
     /**
      * 当池子没到最大容量时，将资源放入池中
@@ -56,21 +42,8 @@ class ResourcePool {
      * @param resource 资源
      */
     public void add(Object resource) throws InterruptedException {
-        try {
-            lock.lock();
-            if (capacity >= size + 1) {
-                list.add(resource);
-                System.out.println(Thread.currentThread().getName() + " produce a resource: " + resource);
-                System.out.println(list);
-                size++;
-                conCondition.signalAll();
-            } else {
-                System.out.println(Thread.currentThread().getName() + " producer begin waiting");
-                proCondition.await();
-            }
-        } finally {
-            lock.unlock();
-        }
+        blockingQueue.put(resource);
+        System.out.println(Thread.currentThread().getName() + "生产后：" + blockingQueue);
     }
 
     /**
@@ -78,20 +51,7 @@ class ResourcePool {
      * 当池子为空时，阻塞消费者，直到生产者生产了资源
      */
     public void remove() throws InterruptedException {
-        try {
-            lock.lock();
-            if (size > 0) {
-                System.out.println(Thread.currentThread().getName() + " consume a resource: " + list.poll());
-                System.out.println(list);
-                size--;
-                proCondition.signalAll();
-            } else {
-                System.out.println(Thread.currentThread().getName() + " consumer begin waiting");
-                conCondition.await();
-            }
-        } finally {
-            lock.unlock();
-        }
+        System.out.println(Thread.currentThread().getName() + "消费 [" + blockingQueue.take() + "] 后：" + blockingQueue);
     }
 }
 
@@ -145,3 +105,4 @@ class Consumer implements Runnable {
         }
     }
 }
+
