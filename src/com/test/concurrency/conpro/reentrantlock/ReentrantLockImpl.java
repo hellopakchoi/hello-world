@@ -10,7 +10,9 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class ReentrantLockImpl {
     private static final ReentrantLock LOCK = new ReentrantLock();
-    private static final ResourcePool RESOURCE_POOL = new ResourcePool(7, LOCK);
+    private static final Condition proCondition = LOCK.newCondition();
+    private static final Condition conCondition = LOCK.newCondition();
+    private static final ResourcePool RESOURCE_POOL = new ResourcePool(7, LOCK, proCondition, conCondition);
 
     public static void main(String[] args) {
         Thread p1 = new Thread(new Producer(RESOURCE_POOL));
@@ -43,11 +45,11 @@ class ResourcePool {
     private final Condition proCondition;
     private final Condition conCondition;
 
-    public ResourcePool(int capacity, ReentrantLock lock) {
+    public ResourcePool(int capacity, ReentrantLock lock, Condition proCondition, Condition conCondition) {
         this.capacity = capacity;
         this.lock = lock;
-        this.proCondition = lock.newCondition();
-        this.conCondition = lock.newCondition();
+        this.proCondition = proCondition;
+        this.conCondition = conCondition;
     }
 
     /**
