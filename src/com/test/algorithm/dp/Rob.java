@@ -40,11 +40,15 @@ public class Rob {
         return fn;
     }
 
+    /**
+     * 首尾相邻不可取
+     */
     private static int robLoop(int[] nums) {
         if (nums.length == 1) {
             return nums[0];
         }
         int[] dest = new int[nums.length - 1];
+        // 可以使用指针替代arraycopy
         System.arraycopy(nums, 1, dest, 0, nums.length - 1);
         int x1 = rob1(dest);
         System.arraycopy(nums, 0, dest, 0, nums.length - 1);
